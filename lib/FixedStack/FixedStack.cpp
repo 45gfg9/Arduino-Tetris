@@ -32,15 +32,3 @@ bool FixedStack<E>::pop(E &e)
     e = _elementArray[--_tos];
     return true;
 }
-
-template <typename E>
-inline bool FixedStack<E>::isEmpty() const
-{
-    return _tos == 0;
-}
-
-template <typename E>
-inline bool FixedStack<E>::isFull() const
-{
-    return _tos == _size;
-}

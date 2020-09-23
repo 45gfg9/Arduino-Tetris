@@ -19,8 +19,8 @@ public:
     bool push(const E &e);
     bool pop(E &e);
 
-    bool isEmpty() const;
-    bool isFull() const;
+    bool isEmpty() const { return _tos == 0; }
+    bool isFull() const { return _tos == _size; }
 };
 
 #endif
