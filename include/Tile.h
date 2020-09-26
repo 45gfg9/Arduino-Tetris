@@ -8,12 +8,12 @@
 
 class Tile : public Paintable
 {
-    static const unsigned char TEXTURE[8];
-    Tile *l, *r, *u, *d;
-    Pos x, y;
+    static const byte _TEXTURE[8];
 
 public:
-    Tile(Painter *painter, Pos x, Pos y);
+    Pos pos;
+
+    Tile(Painter *painter, Pos pos);
     ~Tile();
 
     void paint() const;

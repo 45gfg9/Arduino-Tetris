@@ -7,23 +7,17 @@
 class Block : public Paintable
 {
 protected:
-    Tile *t;
-
-    struct IDedTile
-    {
-        ID id;
-        Tile *tile;
-    };
+    Tile *tiles[4];
 
 public:
     Block(Painter *painter);
-    virtual ~Block() = 0;
+    virtual ~Block();
 
-    virtual Tile *getRotatePivot(Direction d) const = 0;
+    bool testTouch(Direction d) const;
 
-    int getBound(Direction d) const;
-    virtual bool rotate(Direction d);
-    virtual bool moveTo(Direction d);
+    virtual Tile *getPivot() const;
+    virtual void rotate(Rotation d);
+    virtual bool move(Direction d);
 
     void paint() const;
 };
@@ -31,9 +25,9 @@ public:
 /*
 
     +---+
-    | 1 |
+    | 2 |
 +---+---+---+
-| 2 | 3 | 4 |
+| 1 | 0 | 3 |
 +---+---+---+
 
 */
@@ -45,7 +39,7 @@ class TBlock : public Block
 /*
 
 +---+---+---+---+
-| 1 | 2 | 3 | 4 |
+| 1 | 0 | 2 | 3 |
 +---+---+---+---+
 
 */
@@ -57,9 +51,9 @@ class IBlock : public Block
 /*
 
         +---+
-        | 4 |
+        | 3 |
 +---+---+---+
-| 1 | 2 | 3 |
+| 1 | 0 | 2 |
 +---+---+---+
 
 */
@@ -71,9 +65,9 @@ class LBlock : public Block
 /*
 
 +---+---+
-| 1 | 2 |
+| 1 | 0 |
 +---+---+---+
-    | 3 | 4 |
+    | 2 | 3 |
     +---+---+
 
 */
@@ -85,23 +79,23 @@ class ZBlock : public Block
 /*
 
 +---+
-| 4 |
+| 3 |
 +---+---+---+
-| 1 | 2 | 3 |
+| 2 | 0 | 1 |
 +---+---+---+
 
 */
-// Flipped L-Shaped Block
-class FlipLBlock : public Block
+// J-Shaped Block
+class JBlock : public Block
 {
 };
 
 /*
 
     +---+---+
-    | 1 | 2 |
+    | 0 | 1 |
 +---+---+---+
-| 3 | 4 |
+| 2 | 3 |
 +---+---+
 
 */
@@ -113,14 +107,16 @@ class FlipZBlock : public Block
 /*
 
 +---+---+
-| 1 | 2 |
+| 0 | 1 |
 +---+---+
-| 3 | 4 |
+| 2 | 3 |
 +---+---+
 
 */
-// Square Block
-class SqBlock : public Block
+// O-Shaped(Square) Block
+class OBlock : public Block
 {
+    Tile *getPivot() const { return nullptr; }
+    void rotate() const { return; }
 };
 #endif

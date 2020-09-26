@@ -5,10 +5,12 @@
 
 class Board : public Paintable
 {
-    Pos x, y;
+    void *layout;
 
 public:
-    Board(Painter *painter, Pos x, Pos y);
+    Pos size;
+    Board(Painter *painter, Pos size);
+    ~Board();
 
     void paint() const;
 };
