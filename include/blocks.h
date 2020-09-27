@@ -34,6 +34,8 @@ public:
 // T-Shaped Block
 class TBlock : public Block
 {
+public:
+    TBlock(Painter *painter);
 };
 
 /*
@@ -46,6 +48,8 @@ class TBlock : public Block
 // I-Shaped Block
 class IBlock : public Block
 {
+public:
+    IBlock(Painter *painter);
 };
 
 /*
@@ -60,6 +64,8 @@ class IBlock : public Block
 // L-Shaped Block
 class LBlock : public Block
 {
+public:
+    LBlock(Painter *painter);
 };
 
 /*
@@ -74,6 +80,8 @@ class LBlock : public Block
 // Z-Shaped Block
 class ZBlock : public Block
 {
+public:
+    ZBlock(Painter *painter);
 };
 
 /*
@@ -88,6 +96,8 @@ class ZBlock : public Block
 // J-Shaped Block
 class JBlock : public Block
 {
+public:
+    JBlock(Painter *painter);
 };
 
 /*
@@ -102,6 +112,8 @@ class JBlock : public Block
 // Flipped Z-Shaped Block
 class FlipZBlock : public Block
 {
+public:
+    FlipZBlock(Painter *painter);
 };
 
 /*
@@ -116,6 +128,8 @@ class FlipZBlock : public Block
 // O-Shaped(Square) Block
 class OBlock : public Block
 {
+public:
+    OBlock(Painter *painter);
     Tile *getPivot() const { return nullptr; }
     void rotate() const { return; }
 };

@@ -3,14 +3,20 @@
 
 #include "Paintable.h"
 
+static const byte BOARD_X = 6;
+static const byte BOARD_Y = 8;
+
 class Board : public Paintable
 {
-    void *layout;
+    bool _layout[BOARD_X][BOARD_Y];
 
 public:
-    Pos size;
+    const Pos size;
     Board(Painter *painter, Pos size);
     ~Board();
+
+    bool isEmpty(Pos pos) const;
+    bool isOutOfBounds(Pos pos) const;
 
     void paint() const;
 };

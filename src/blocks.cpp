@@ -1,10 +1,5 @@
 #include "blocks.h"
 
-Block::Block(Painter *painter)
-{
-    this->painter = painter;
-}
-
 static Pos calcRotLandPos(Pos p, Pos t, Rotation r)
 {
     if (r == CLOCKWISE)
@@ -15,6 +10,27 @@ static Pos calcRotLandPos(Pos p, Pos t, Rotation r)
     {
         return {(byte)(p.y - t.y + p.x), (byte)(p.x - t.x + p.y)};
     }
+}
+
+Block::Block(Painter *painter)
+{
+    this->painter = painter;
+
+    for (int i = 0; i < 4; i++)
+        tiles[i] = nullptr;
+}
+
+Block::~Block()
+{
+    for (int i = 0; i < 4; i++)
+    {
+        delete tiles[i];
+    }
+}
+
+inline Tile *Block::getPivot() const
+{
+    return tiles[0];
 }
 
 void Block::rotate(Rotation r)
@@ -47,7 +63,30 @@ bool Block::move(Direction d)
     return true;
 }
 
-inline Tile *Block::getPivot() const
+TBlock::TBlock(Painter *painter) : Block(painter)
 {
-    return tiles[0];
+}
+
+IBlock::IBlock(Painter *painter) : Block(painter)
+{
+}
+
+LBlock::LBlock(Painter *painter) : Block(painter)
+{
+}
+
+ZBlock::ZBlock(Painter *painter) : Block(painter)
+{
+}
+
+JBlock::JBlock(Painter *painter) : Block(painter)
+{
+}
+
+FlipZBlock::FlipZBlock(Painter *painter) : Block(painter)
+{
+}
+
+OBlock::OBlock(Painter *painter) : Block(painter)
+{
 }
