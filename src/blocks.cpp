@@ -1,14 +1,14 @@
 #include "blocks.h"
 
-static Pos calcRotLandPos(Pos p, Pos t, Rotation r)
+static Pos calcRotLandPos(Pos pvt, Pos now, Rotation r)
 {
     if (r == CLOCKWISE)
     {
-        return {(byte)(t.y - p.y + p.x), (byte)(t.x - p.x + p.y)};
+        return {(byte)(now.y - pvt.y + pvt.x), (byte)(now.x - pvt.x + pvt.y)};
     }
     else
     {
-        return {(byte)(p.y - t.y + p.x), (byte)(p.x - t.x + p.y)};
+        return {(byte)(pvt.y - now.y + pvt.x), (byte)(pvt.x - now.x + pvt.y)};
     }
 }
 
@@ -44,8 +44,7 @@ void Block::rotate(Rotation r)
         Tile *tile = tiles[i];
 
         // BS
-        Pos land = calcRotLandPos(pivot->pos, tile->pos, r);
-        tile->pos = land;
+        tile->pos = calcRotLandPos(pivot->pos, tile->pos, r);
         tile->paint();
     }
 }

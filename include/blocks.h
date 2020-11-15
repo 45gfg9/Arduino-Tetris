@@ -1,5 +1,5 @@
-#ifndef __TETRIS_BLOCK__
-#define __TETRIS_BLOCK__
+#ifndef __TETRIS_BLOCKS__
+#define __TETRIS_BLOCKS__
 
 #include "Paintable.h"
 #include "Tile.h"
@@ -133,4 +133,5 @@ public:
     Tile *getPivot() const { return nullptr; }
     void rotate() const { return; }
 };
+
 #endif

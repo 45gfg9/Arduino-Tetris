@@ -2,7 +2,7 @@
 #define __TETRIS_DEFS__
 
 #include <Adafruit_GFX.h>
-#include "util.h"
+#include <FixedStack.h>
 
 typedef byte ID;
 typedef Adafruit_GFX Painter;

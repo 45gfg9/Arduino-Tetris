@@ -20,6 +20,7 @@ void setup()
         for (;;)
             ;
 
+    display.print("Text");
 }
 
 void loop()
