@@ -2,20 +2,19 @@
 #define __TETRIS_BLOCKS__
 
 #include "Paintable.h"
+#include "Board.h"
 #include "Tile.h"
 
 class Block : public Paintable {
 protected:
-  Tile *tiles[4];
+  Tile *_tiles[4];
+  Block();
 
 public:
-  Block();
   virtual ~Block();
 
-  bool testTouch(Direction d) const;
-
   virtual Tile *getPivot() const;
-  virtual void rotate(Rotation d);
+  virtual bool rotate(Rotation d);
   virtual bool move(Direction d);
 
   void paint() const;
@@ -123,7 +122,7 @@ class OBlock : public Block {
 public:
   OBlock();
   Tile *getPivot() const { return nullptr; }
-  void rotate() const { return; }
+  bool rotate(Rotation r) { return true; }
 };
 
 #endif

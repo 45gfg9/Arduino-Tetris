@@ -3,13 +3,15 @@
 
 #include <Adafruit_SSD1306.h>
 
-using ID = byte;
 extern Adafruit_SSD1306 *gameboard;
 extern Adafruit_SSD1306 *scoreboard;
 
 struct Pos {
-  byte x : 4;
-  byte y : 4;
+  byte x;
+  byte y;
+
+  bool operator==(const Pos &o) { return x == o.x && y == o.y; }
+  bool operator!=(const Pos &o) { return x != o.x || y != o.y; }
 };
 
 enum class Rotation {

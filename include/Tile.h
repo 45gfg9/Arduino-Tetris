@@ -6,11 +6,9 @@
 #define TILE_HEIGHT 6
 #define TILE_WIDTH 6
 
-class Tile : public Paintable {
+class Tile : public Pos, public Paintable {
 public:
   static const byte _TEXTURE[] PROGMEM;
-
-  Pos _pos;
 
   Tile(const Pos &pos);
 

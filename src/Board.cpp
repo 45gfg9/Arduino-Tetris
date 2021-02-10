@@ -1,17 +1,29 @@
 #include "Board.h"
+#include "Tile.h"
 
-Board::Board(const Pos &pos) : size(pos) {
-  memset(_layout, 0, BOARD_X * BOARD_Y);
+const Pos Board::SIZE {10, 21};
+Board board;
+
+Board::Board() : _layout(new BitSet(SIZE.x * SIZE.y)) {}
+
+Board::~Board() {
+  delete _layout;
 }
 
-Board::~Board() {}
-
-bool Board::isOutOfBounds(Pos pos) const {
-  return (pos.x < 0 || pos.y < 0 || pos.x >= BOARD_X || pos.y >= BOARD_Y);
+bool Board::isOutOfBounds(const Pos &pos) const {
+  return (pos.x < 0 || pos.y < 0 || pos.x >= SIZE.x || pos.y >= SIZE.y);
 }
 
-bool Board::isEmpty(Pos pos) const {
-  if (isOutOfBounds(pos))
-    return false;
-  return !(_layout[pos.x][pos.y]);
+bool Board::get(const Pos &pos) const {
+  return !isOutOfBounds(pos) && (_layout->get(pos.x + SIZE.x * pos.y));
+}
+
+void Board::paint() const {
+  for (byte x = SIZE.x - 1; x; x--) {
+    for (byte y = SIZE.y - 1; y; y--) {
+      if (get({x, y})) {
+        Tile({x, y}).paint();
+      }
+    }
+  }
 }

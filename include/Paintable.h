@@ -3,14 +3,9 @@
 
 #include "defs.h"
 
-class Paintable
-{
-protected:
-    ;
-
-public:
-    virtual ~Paintable() = default;
-    virtual void paint() const = 0;
+struct Paintable {
+  virtual ~Paintable() = default;
+  virtual void paint() const = 0;
 };
 
 #endif
