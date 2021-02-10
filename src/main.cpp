@@ -1,8 +1,5 @@
 #include <SPI.h>
-
 #include "tetris.h"
-
-#include <algorithm>
 
 // D0 - 13 (SCK)
 // D1 - 11 (MOSI)
