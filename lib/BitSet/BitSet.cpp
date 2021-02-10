@@ -1,44 +1,38 @@
 #include <BitSet.h>
 #include <math.h>
 
-template <typename V>
-BitSet<V>::BitSet(int size)
-    : _size(size), _bits(new V[ceil((double)size / _VB)]) {}
+BitSet::BitSet(unsigned int size)
+    : _size(size), _bits(new char[(size_t)ceil((double)size / _VB)]) {}
 
-template <typename V>
-BitSet<V>::~BitSet() {
+BitSet::~BitSet() {
   delete[] _bits;
 }
 
-template <typename V>
-bool BitSet<V>::get(int index) const {
+bool BitSet::get(unsigned int index) const {
   if (index >= _size)
     return false;
 
   int idx = index / _VB;
   int bit = index % _VB;
 
-  return _bits[idx] & ((V)1 << bit);
+  return _bits[idx] & (1 << bit);
 }
 
-template <typename V>
-void BitSet<V>::_set(int index, bool value) {
+void BitSet::_set(unsigned int index, bool value) {
   int idx = index / _VB;
   int bit = index % _VB;
 
   if (value) {
-    _bits[idx] |= ((V)1 << bit);
+    _bits[idx] |= (1 << bit);
   } else {
-    _bits[idx] &= ~((V)1 << bit);
+    _bits[idx] &= ~(1 << bit);
   }
 }
 
-template <typename V>
-inline void BitSet<V>::set(int index) {
+inline void BitSet::set(unsigned int index) {
   _set(index, true);
 }
 
-template <typename V>
-inline void BitSet<V>::clear(int index) {
+inline void BitSet::clear(unsigned int index) {
   _set(index, false);
 }
