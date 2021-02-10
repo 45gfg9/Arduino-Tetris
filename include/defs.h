@@ -1,30 +1,27 @@
 #ifndef __TETRIS_DEFS__
 #define __TETRIS_DEFS__
 
-#include <Adafruit_GFX.h>
-#include <FixedStack.h>
+#include <Adafruit_SSD1306.h>
 
-typedef byte ID;
-typedef Adafruit_GFX Painter;
+using ID = byte;
+extern Adafruit_SSD1306 *gameboard;
+extern Adafruit_SSD1306 *scoreboard;
 
-struct Pos
-{
-    byte x : 4;
-    byte y : 4;
+struct Pos {
+  byte x : 4;
+  byte y : 4;
 };
 
-enum Rotation
-{
-    CLOCKWISE,
-    COUNTERCLOCKWISE,
+enum class Rotation {
+  CLOCKWISE,
+  COUNTERCLOCKWISE,
 };
 
-enum Direction
-{
-    LEFT,
-    RIGHT,
-    UP,
-    DOWN,
+enum class Direction {
+  LEFT,
+  RIGHT,
+  UP,
+  DOWN,
 };
 
 #endif

@@ -4,22 +4,21 @@
 #include "Paintable.h"
 #include "Tile.h"
 
-class Block : public Paintable
-{
+class Block : public Paintable {
 protected:
-    Tile *tiles[4];
+  Tile *tiles[4];
 
 public:
-    Block(Painter *painter);
-    virtual ~Block();
+  Block();
+  virtual ~Block();
 
-    bool testTouch(Direction d) const;
+  bool testTouch(Direction d) const;
 
-    virtual Tile *getPivot() const;
-    virtual void rotate(Rotation d);
-    virtual bool move(Direction d);
+  virtual Tile *getPivot() const;
+  virtual void rotate(Rotation d);
+  virtual bool move(Direction d);
 
-    void paint() const;
+  void paint() const;
 };
 
 /*
@@ -32,10 +31,9 @@ public:
 
 */
 // T-Shaped Block
-class TBlock : public Block
-{
+class TBlock : public Block {
 public:
-    TBlock(Painter *painter);
+  TBlock();
 };
 
 /*
@@ -46,10 +44,9 @@ public:
 
 */
 // I-Shaped Block
-class IBlock : public Block
-{
+class IBlock : public Block {
 public:
-    IBlock(Painter *painter);
+  IBlock();
 };
 
 /*
@@ -62,10 +59,9 @@ public:
 
 */
 // L-Shaped Block
-class LBlock : public Block
-{
+class LBlock : public Block {
 public:
-    LBlock(Painter *painter);
+  LBlock();
 };
 
 /*
@@ -78,10 +74,9 @@ public:
 
 */
 // Z-Shaped Block
-class ZBlock : public Block
-{
+class ZBlock : public Block {
 public:
-    ZBlock(Painter *painter);
+  ZBlock();
 };
 
 /*
@@ -94,10 +89,9 @@ public:
 
 */
 // J-Shaped Block
-class JBlock : public Block
-{
+class JBlock : public Block {
 public:
-    JBlock(Painter *painter);
+  JBlock();
 };
 
 /*
@@ -110,10 +104,9 @@ public:
 
 */
 // Flipped Z-Shaped Block
-class FlipZBlock : public Block
-{
+class FlipZBlock : public Block {
 public:
-    FlipZBlock(Painter *painter);
+  FlipZBlock();
 };
 
 /*
@@ -126,12 +119,11 @@ public:
 
 */
 // O-Shaped(Square) Block
-class OBlock : public Block
-{
+class OBlock : public Block {
 public:
-    OBlock(Painter *painter);
-    Tile *getPivot() const { return nullptr; }
-    void rotate() const { return; }
+  OBlock();
+  Tile *getPivot() const { return nullptr; }
+  void rotate() const { return; }
 };
 
 #endif

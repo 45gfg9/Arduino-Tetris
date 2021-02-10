@@ -3,20 +3,18 @@
 
 #include "Paintable.h"
 
-#define TILE_HEIGHT 8
-#define TILE_WIDTH 8
+#define TILE_HEIGHT 6
+#define TILE_WIDTH 6
 
-class Tile : public Paintable
-{
-    static const byte _TEXTURE[8];
-
+class Tile : public Paintable {
 public:
-    Pos pos;
+  static const byte _TEXTURE[] PROGMEM;
 
-    Tile(Painter *painter, Pos pos);
-    ~Tile();
+  Pos _pos;
 
-    void paint() const;
+  Tile(const Pos &pos);
+
+  void paint() const;
 };
 
 #endif

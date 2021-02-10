@@ -1,28 +1,28 @@
-#include <Arduino.h>
 #include <SPI.h>
-#include <Adafruit_SSD1306.h>
 
 #include "tetris.h"
 
-#define SCR_WIDTH 128
-#define SCR_HEIGHT 64
-#define CS 8
-#define DC 9
-#define RST 10
+#include <algorithm>
 
 // D0 - 13 (SCK)
 // D1 - 11 (MOSI)
-Adafruit_SSD1306 display(SCR_WIDTH, SCR_HEIGHT, &SPI, DC, RST, CS);
+Adafruit_SSD1306 *gameboard =
+    new Adafruit_SSD1306(SCR_WIDTH, SCR_HEIGHT, &SPI, DC, RST, CS);
+Adafruit_SSD1306 *scoreboard = new Adafruit_SSD1306(SCR_WIDTH, 32);
 
-void setup()
-{
-    if (!display.begin())
-        for (;;)
-            ;
+void setup() {
+  if (!(gameboard->begin() && scoreboard->begin()))
+    for (;;)
+      ;
 
-    display.print("Text");
+  // gameboard->clearDisplay();
+  // gameboard->setTextColor(SSD1306_WHITE);
+  // gameboard->drawLine(0, 0, 127, 63, SSD1306_WHITE);
+  // gameboard->print("Text");
+  gameboard->clearDisplay();
+  gameboard->drawBitmap(0, 0, Tile::_TEXTURE, 6, 6, SSD1306_WHITE);
+  gameboard->display();
+  scoreboard->display();
 }
 
-void loop()
-{
-}
+void loop() {}

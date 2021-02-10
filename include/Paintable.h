@@ -6,9 +6,10 @@
 class Paintable
 {
 protected:
-    Painter *painter;
+    ;
 
 public:
+    virtual ~Paintable() = default;
     virtual void paint() const = 0;
 };
 
