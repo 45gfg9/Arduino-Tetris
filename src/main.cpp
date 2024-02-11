@@ -3,19 +3,19 @@
 
 // D0 - 13 (SCK)
 // D1 - 11 (MOSI)
-Adafruit_SSD1306 *gameboard =
-    new Adafruit_SSD1306(SCR_WIDTH, SCR_HEIGHT, &SPI, DC, RST, CS);
-// Adafruit_SSD1306 *scoreboard = new Adafruit_SSD1306(SCR_WIDTH, 32);
+
+U8G2_SSD1306_128X64_NONAME_F_4W_HW_SPI u8g2(U8G2_R3, PIN_CS, PIN_DC, PIN_RST);
 
 void setup() {
-  if (!(gameboard->begin()))
-    for (;;)
-      ;
+  Serial.begin(115200);
 
-  gameboard->clearDisplay();
-  gameboard->drawRect(0, 0, 129, 64, SSD1306_WHITE);
+  srand(analogRead(A5) << 8 ^ analogRead(A0));
 
-  gameboard->display();
+  u8g2.begin();
+
+  initGameFrame(u8g2.getU8g2());
 }
 
-void loop() {}
+void loop() {
+  testLoop(u8g2.getU8g2());
+}
