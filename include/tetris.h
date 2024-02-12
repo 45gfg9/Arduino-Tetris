@@ -25,9 +25,12 @@ enum input_t : uint8_t {
   TR_IN_PAUSE,   // pause
 };
 
-enum gamemode_t : uint8_t { MODE_IDLE, MODE_AUTO, MODE_STARTED };
+enum gamemode_t : uint8_t { MODE_STARTED, MODE_AUTO, MODE_IDLE };
 
+// display
 extern U8G2_SSD1306_128X64_NONAME_F_4W_HW_SPI u8g2;
+
+// current game mode
 extern gamemode_t mode;
 // score
 extern unsigned int score;
@@ -35,9 +38,6 @@ extern unsigned int score;
 extern unsigned long gameTicks;
 
 void drawGameFrame();
-
-// draw a 6x6 tile
-void drawTile(uint8_t x, uint8_t y, uint8_t tile_idx);
 
 [[noreturn]] void testLoop();
 
