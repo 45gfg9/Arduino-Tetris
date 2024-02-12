@@ -36,6 +36,9 @@ static uint8_t currentTileX;
 static uint8_t currentTileY;
 static uint8_t currentTileRot;
 
+// is game paused
+static bool isPaused;
+
 gamemode_t mode;
 
 unsigned int score;
@@ -120,27 +123,53 @@ static void drawT(int8_t tileIdx) {
 
 static void drawZ(int8_t tileIdx) {
   drawTile(currentTileX, currentTileY, tileIdx);
-  if (currentTileRot % 2) {
-    drawTile(currentTileX + 1, currentTileY - 1, tileIdx);
-    drawTile(currentTileX + 1, currentTileY, tileIdx);
-    drawTile(currentTileX, currentTileY + 1, tileIdx);
-  } else {
-    drawTile(currentTileX - 1, currentTileY - 1, tileIdx);
-    drawTile(currentTileX, currentTileY - 1, tileIdx);
-    drawTile(currentTileX + 1, currentTileY, tileIdx);
+  switch (currentTileRot) {
+    case 0:
+      drawTile(currentTileX - 1, currentTileY - 1, tileIdx);
+      drawTile(currentTileX, currentTileY - 1, tileIdx);
+      drawTile(currentTileX + 1, currentTileY, tileIdx);
+      break;
+    case 1:
+      drawTile(currentTileX + 1, currentTileY - 1, tileIdx);
+      drawTile(currentTileX + 1, currentTileY, tileIdx);
+      drawTile(currentTileX, currentTileY + 1, tileIdx);
+      break;
+    case 2:
+      drawTile(currentTileX + 1, currentTileY + 1, tileIdx);
+      drawTile(currentTileX, currentTileY + 1, tileIdx);
+      drawTile(currentTileX - 1, currentTileY, tileIdx);
+      break;
+    case 3:
+      drawTile(currentTileX - 1, currentTileY + 1, tileIdx);
+      drawTile(currentTileX - 1, currentTileY, tileIdx);
+      drawTile(currentTileX, currentTileY - 1, tileIdx);
+      break;
   }
 }
 
 static void drawS(int8_t tileIdx) {
   drawTile(currentTileX, currentTileY, tileIdx);
-  if (currentTileRot % 2) {
-    drawTile(currentTileX + 1, currentTileY + 1, tileIdx);
-    drawTile(currentTileX + 1, currentTileY, tileIdx);
-    drawTile(currentTileX, currentTileY - 1, tileIdx);
-  } else {
-    drawTile(currentTileX + 1, currentTileY - 1, tileIdx);
-    drawTile(currentTileX, currentTileY - 1, tileIdx);
-    drawTile(currentTileX - 1, currentTileY, tileIdx);
+  switch (currentTileRot) {
+    case 0:
+      drawTile(currentTileX + 1, currentTileY - 1, tileIdx);
+      drawTile(currentTileX, currentTileY - 1, tileIdx);
+      drawTile(currentTileX - 1, currentTileY, tileIdx);
+      break;
+    case 1:
+      drawTile(currentTileX + 1, currentTileY + 1, tileIdx);
+      drawTile(currentTileX + 1, currentTileY, tileIdx);
+      drawTile(currentTileX, currentTileY - 1, tileIdx);
+      break;
+    case 2:
+      drawTile(currentTileX - 1, currentTileY + 1, tileIdx);
+      drawTile(currentTileX, currentTileY + 1, tileIdx);
+      drawTile(currentTileX + 1, currentTileY, tileIdx);
+      break;
+    case 3:
+      drawTile(currentTileX - 1, currentTileY - 1, tileIdx);
+      drawTile(currentTileX - 1, currentTileY, tileIdx);
+      drawTile(currentTileX, currentTileY + 1, tileIdx);
+      break;
   }
 }
 
@@ -222,6 +251,24 @@ static void drawCurrent(bool isWhite) {
   drawingFunction(tileIdx);
 }
 
+static void rotateCurrent(bool isClockwise) {
+  uint8_t nextTileRot = (currentTileRot + (isClockwise ? 1 : 3)) % 4;
+
+  if (currentTile == TILE_I) {
+    if ((currentTileRot == 0 && nextTileRot == 1) || (currentTileRot == 3 && nextTileRot == 2)) {
+      currentTileX++;
+    } else if ((currentTileRot == 1 && nextTileRot == 0) || (currentTileRot == 2 && nextTileRot == 3)) {
+      currentTileX--;
+    } else if ((currentTileRot == 0 && nextTileRot == 3) || (currentTileRot == 1 && nextTileRot == 2)) {
+      currentTileY++;
+    } else if ((currentTileRot == 3 && nextTileRot == 0) || (currentTileRot == 2 && nextTileRot == 1)) {
+      currentTileY--;
+    }
+  }
+
+  currentTileRot = nextTileRot;
+}
+
 static void drawScore() {
   char str[6];
   itoa(score, str, 10);
@@ -261,6 +308,9 @@ static void nextTile(bool isHold) {
   currentTileRot = 0;
 
   char str[] = {pgm_read_byte(TILE_CHARS + (holdBoxTile & 0x7)), 0};
+  u8g2.setDrawColor(0);
+  u8g2.drawBox(58, 0, 6, 8);
+  u8g2.setDrawColor(1);
   u8g2.drawStr(58, 8, str);
 }
 
@@ -277,6 +327,7 @@ void startGame(bool isAuto) {
   u8g2.sendBuffer();
 
   memset(gameBoard, 0, sizeof gameBoard);
+  isPaused = false;
 }
 
 void tickGame() {
@@ -290,11 +341,11 @@ void tickGame() {
       u8g2.sendBuffer();
     } else {
       u8g2.setDrawColor(0);
-      u8g2.drawBox(24, 0, 30, 8);
+      u8g2.drawBox(24, 0, 32, 8);
     }
   }
 
-  if (gameTicks % 20) {
+  if (gameTicks % 20 || isPaused) {
     return;
   }
 
@@ -305,5 +356,32 @@ void tickGame() {
 }
 
 void handleInput(input_t input) {
-  // TODO
+  if (input == TR_IN_PAUSE) {
+    isPaused = !isPaused;
+    if (isPaused) {
+      u8g2.setDrawColor(1);
+      u8g2.drawStr(24, 8, "PAUSED");
+    } else {
+      u8g2.setDrawColor(0);
+      u8g2.drawBox(24, 0, 32, 8);
+    }
+  } else if (input == TR_IN_HOLD && ((holdBoxTile & 0x80) == 0)) {
+    drawCurrent(false);
+    nextTile(true);
+  } else {
+    drawCurrent(false);
+    if (input == TR_IN_LEFT) {
+      currentTileX--;
+    } else if (input == TR_IN_RIGHT) {
+      currentTileX++;
+    } else if (input == TR_IN_DOWN) {
+      currentTileY++;
+    } else if (input == TR_IN_LOCK) {
+      // NYI
+    } else if (input == TR_IN_ROT_CW || input == TR_IN_ROT_CCW) {
+      rotateCurrent(input == TR_IN_ROT_CW);
+    }
+    drawCurrent(true);
+  }
+  u8g2.sendBuffer();
 }
