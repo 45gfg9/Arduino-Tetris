@@ -230,15 +230,23 @@ void startGame(bool isAuto) {
 void tickGame() {
   ++gameTicks;
 
-  if (mode == MODE_AUTO && gameTicks % 10 == 0) {
-    unsigned int ticks = gameTicks / 10;
-    if (ticks % 2) {
-      u8g2.setDrawColor(1);
-      u8g2.drawStr(24, 8, "AUTO");
-      u8g2.sendBuffer();
-    } else {
-      u8g2.setDrawColor(0);
-      u8g2.drawBox(24, 0, 32, 8);
+  if (mode == MODE_AUTO) {
+    auto rnd = rand() & 0x3f;
+
+    if (rnd < 7) {
+      handleInput((input_t)rnd);
+    }
+
+    if (gameTicks % 10 == 0) {
+      unsigned int ticks = gameTicks / 10;
+      if (ticks % 2) {
+        u8g2.setDrawColor(1);
+        u8g2.drawStr(24, 8, "AUTO");
+        u8g2.sendBuffer();
+      } else {
+        u8g2.setDrawColor(0);
+        u8g2.drawBox(24, 0, 32, 8);
+      }
     }
   }
 

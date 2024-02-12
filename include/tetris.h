@@ -14,15 +14,15 @@
 
 // tetris input
 enum input_t : uint8_t {
-  TR_IN_NONE,    // no input
   TR_IN_LEFT,    // left shift
   TR_IN_RIGHT,   // right shift
   TR_IN_DOWN,    // non-locking soft drop
-  TR_IN_LOCK,    // locking hard drop
   TR_IN_ROT_CW,  // clockwise rotate
   TR_IN_ROT_CCW, // counterclockwise rotate
+  TR_IN_LOCK,    // locking hard drop
   TR_IN_HOLD,    // hold
   TR_IN_PAUSE,   // pause
+  TR_IN_NONE,    // no input
 };
 
 enum gamemode_t : uint8_t { MODE_STARTED, MODE_AUTO, MODE_IDLE };
