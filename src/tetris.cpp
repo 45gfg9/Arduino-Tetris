@@ -7,24 +7,69 @@
 #define TILESIZ 6
 
 enum tile_t : int8_t {
-  TILE_O,
   TILE_T,
   TILE_Z,
   TILE_S,
   TILE_J,
   TILE_L,
   TILE_I,
+  TILE_O,
 };
 
-static const uint16_t TEXTURE_O = 0x9009;
 static const uint16_t TEXTURE_T = 0x0660;
 static const uint16_t TEXTURE_Z = 0x5a5a;
 static const uint16_t TEXTURE_S = 0x8421;
 static const uint16_t TEXTURE_J = 0x6996;
 static const uint16_t TEXTURE_L = 0x9669;
 static const uint16_t TEXTURE_I = 0xffff;
-static const uint16_t TILES[] PROGMEM = {TEXTURE_O, TEXTURE_T, TEXTURE_Z, TEXTURE_S, TEXTURE_J, TEXTURE_L, TEXTURE_I};
-static const char TILE_CHARS[] PROGMEM = {'O', 'T', 'Z', 'S', 'J', 'L', 'I'};
+static const uint16_t TEXTURE_O = 0x9009;
+static const uint16_t TILES[] PROGMEM = {TEXTURE_T, TEXTURE_Z, TEXTURE_S, TEXTURE_J, TEXTURE_L, TEXTURE_I, TEXTURE_O};
+static const char TILE_CHARS[] PROGMEM = {'T', 'Z', 'S', 'J', 'L', 'I', 'O'};
+
+static const int8_t TILEPOS[6][4][3][2] PROGMEM = {
+    // T
+    {
+        {{-1, 0}, {0, -1}, {1, 0}},
+        {{0, 1}, {0, -1}, {1, 0}},
+        {{-1, 0}, {0, 1}, {1, 0}},
+        {{-1, 0}, {0, -1}, {0, 1}},
+    },
+    // Z
+    {
+        {{-1, -1}, {0, -1}, {1, 0}},
+        {{0, 1}, {1, -1}, {1, 0}},
+        {{-1, 0}, {1, 1}, {0, 1}},
+        {{-1, 0}, {0, -1}, {-1, 1}},
+    },
+    // S
+    {
+        {{-1, 0}, {0, -1}, {1, -1}},
+        {{1, 1}, {0, -1}, {1, 0}},
+        {{-1, 1}, {0, 1}, {1, 0}},
+        {{-1, 0}, {0, 1}, {-1, -1}},
+    },
+    // J
+    {
+        {{-1, -1}, {-1, 0}, {1, 0}},
+        {{1, -1}, {0, -1}, {0, 1}},
+        {{-1, 0}, {1, 0}, {1, 1}},
+        {{0, -1}, {0, 1}, {-1, 1}},
+    },
+    // L
+    {
+        {{-1, 0}, {1, -1}, {1, 0}},
+        {{0, 1}, {0, -1}, {1, 1}},
+        {{-1, 0}, {-1, 1}, {1, 0}},
+        {{0, 1}, {0, -1}, {-1, -1}},
+    },
+    // I
+    {
+        {{-1, 0}, {1, 0}, {2, 0}},
+        {{0, -1}, {0, 1}, {0, 2}},
+        {{-2, 0}, {-1, 0}, {1, 0}},
+        {{0, -2}, {0, -1}, {0, 1}},
+    },
+};
 
 // hold box
 // the highest bit indicates whether it was just swapped with current tile
@@ -85,170 +130,22 @@ void drawTile(uint8_t x, uint8_t y, int8_t tileIdx) {
   u8g2.setDrawColor(1);
 }
 
-void testLoop() {
-  while (1) {
-    for (uint8_t i = 0; i < BOARD_H; i++) {
-      for (uint8_t j = 0; j < BOARD_W; j++) {
-        drawTile(j, i, rand() % 8);
-      }
-    }
-    u8g2.sendBuffer();
-    delay(2000);
-  }
-}
-
-static void drawO(int8_t tileIdx) {
-  for (uint8_t i = 0; i < 2; i++) {
-    for (uint8_t j = 0; j < 2; j++) {
-      drawTile(currentTileX + i, currentTileY + j, tileIdx);
-    }
-  }
-}
-
-static void drawT(int8_t tileIdx) {
-  drawTile(currentTileX, currentTileY, tileIdx);
-  if (currentTileRot != 0) {
-    drawTile(currentTileX, currentTileY + 1, tileIdx);
-  }
-  if (currentTileRot != 1) {
-    drawTile(currentTileX - 1, currentTileY, tileIdx);
-  }
-  if (currentTileRot != 2) {
-    drawTile(currentTileX, currentTileY - 1, tileIdx);
-  }
-  if (currentTileRot != 3) {
-    drawTile(currentTileX + 1, currentTileY, tileIdx);
-  }
-}
-
-static void drawZ(int8_t tileIdx) {
-  drawTile(currentTileX, currentTileY, tileIdx);
-  switch (currentTileRot) {
-    case 0:
-      drawTile(currentTileX - 1, currentTileY - 1, tileIdx);
-      drawTile(currentTileX, currentTileY - 1, tileIdx);
-      drawTile(currentTileX + 1, currentTileY, tileIdx);
-      break;
-    case 1:
-      drawTile(currentTileX + 1, currentTileY - 1, tileIdx);
-      drawTile(currentTileX + 1, currentTileY, tileIdx);
-      drawTile(currentTileX, currentTileY + 1, tileIdx);
-      break;
-    case 2:
-      drawTile(currentTileX + 1, currentTileY + 1, tileIdx);
-      drawTile(currentTileX, currentTileY + 1, tileIdx);
-      drawTile(currentTileX - 1, currentTileY, tileIdx);
-      break;
-    case 3:
-      drawTile(currentTileX - 1, currentTileY + 1, tileIdx);
-      drawTile(currentTileX - 1, currentTileY, tileIdx);
-      drawTile(currentTileX, currentTileY - 1, tileIdx);
-      break;
-  }
-}
-
-static void drawS(int8_t tileIdx) {
-  drawTile(currentTileX, currentTileY, tileIdx);
-  switch (currentTileRot) {
-    case 0:
-      drawTile(currentTileX + 1, currentTileY - 1, tileIdx);
-      drawTile(currentTileX, currentTileY - 1, tileIdx);
-      drawTile(currentTileX - 1, currentTileY, tileIdx);
-      break;
-    case 1:
-      drawTile(currentTileX + 1, currentTileY + 1, tileIdx);
-      drawTile(currentTileX + 1, currentTileY, tileIdx);
-      drawTile(currentTileX, currentTileY - 1, tileIdx);
-      break;
-    case 2:
-      drawTile(currentTileX - 1, currentTileY + 1, tileIdx);
-      drawTile(currentTileX, currentTileY + 1, tileIdx);
-      drawTile(currentTileX + 1, currentTileY, tileIdx);
-      break;
-    case 3:
-      drawTile(currentTileX - 1, currentTileY - 1, tileIdx);
-      drawTile(currentTileX - 1, currentTileY, tileIdx);
-      drawTile(currentTileX, currentTileY + 1, tileIdx);
-      break;
-  }
-}
-
-static void drawJ(int8_t tileIdx) {
-  drawTile(currentTileX, currentTileY, tileIdx);
-  if (currentTileRot % 2) {
-    drawTile(currentTileX, currentTileY - 1, tileIdx);
-    drawTile(currentTileX, currentTileY + 1, tileIdx);
-
-    if (currentTileRot == 1) {
-      drawTile(currentTileX + 1, currentTileY - 1, tileIdx);
-    } else {
-      drawTile(currentTileX - 1, currentTileY + 1, tileIdx);
-    }
-  } else {
-    drawTile(currentTileX - 1, currentTileY, tileIdx);
-    drawTile(currentTileX + 1, currentTileY, tileIdx);
-
-    if (currentTileRot == 0) {
-      drawTile(currentTileX - 1, currentTileY - 1, tileIdx);
-    } else {
-      drawTile(currentTileX + 1, currentTileY + 1, tileIdx);
-    }
-  }
-}
-
-static void drawL(int8_t tileIdx) {
-  drawTile(currentTileX, currentTileY, tileIdx);
-  if (currentTileRot % 2) {
-    drawTile(currentTileX, currentTileY - 1, tileIdx);
-    drawTile(currentTileX, currentTileY + 1, tileIdx);
-
-    if (currentTileRot == 1) {
-      drawTile(currentTileX + 1, currentTileY + 1, tileIdx);
-    } else {
-      drawTile(currentTileX - 1, currentTileY - 1, tileIdx);
-    }
-  } else {
-    drawTile(currentTileX - 1, currentTileY, tileIdx);
-    drawTile(currentTileX + 1, currentTileY, tileIdx);
-
-    if (currentTileRot == 0) {
-      drawTile(currentTileX + 1, currentTileY - 1, tileIdx);
-    } else {
-      drawTile(currentTileX - 1, currentTileY + 1, tileIdx);
-    }
-  }
-}
-
-static void drawI(int8_t tileIdx) {
-  drawTile(currentTileX, currentTileY, tileIdx);
-  if (currentTileRot % 2) {
-    drawTile(currentTileX, currentTileY - 1, tileIdx);
-    drawTile(currentTileX, currentTileY + 1, tileIdx);
-
-    if (currentTileRot == 1) {
-      drawTile(currentTileX, currentTileY + 2, tileIdx);
-    } else {
-      drawTile(currentTileX, currentTileY - 2, tileIdx);
-    }
-  } else {
-    drawTile(currentTileX - 1, currentTileY, tileIdx);
-    drawTile(currentTileX + 1, currentTileY, tileIdx);
-
-    if (currentTileRot == 0) {
-      drawTile(currentTileX + 2, currentTileY, tileIdx);
-    } else {
-      drawTile(currentTileX - 2, currentTileY, tileIdx);
-    }
-  }
-}
-
 static void drawCurrent(bool isWhite) {
-  static void (*const drawingFunctions[])(int8_t) PROGMEM = {drawO, drawT, drawZ, drawS, drawJ, drawL, drawI};
-
   int8_t tileIdx = isWhite ? currentTile : -1;
 
-  void (*drawingFunction)(int8_t) = (void (*)(int8_t))pgm_read_ptr(drawingFunctions + currentTile);
-  drawingFunction(tileIdx);
+  if (currentTile == TILE_O) {
+    for (uint8_t i = 0; i < 2; i++) {
+      for (uint8_t j = 0; j < 2; j++) {
+        drawTile(currentTileX + i, currentTileY + j, tileIdx);
+      }
+    }
+  } else {
+    drawTile(currentTileX, currentTileY, tileIdx);
+    for (uint8_t i = 0; i < 3; i++) {
+      drawTile(currentTileX + (int8_t)pgm_read_byte(&TILEPOS[currentTile][currentTileRot][i][0]),
+               currentTileY + (int8_t)pgm_read_byte(&TILEPOS[currentTile][currentTileRot][i][1]), tileIdx);
+    }
+  }
 }
 
 static void rotateCurrent(bool isClockwise) {
