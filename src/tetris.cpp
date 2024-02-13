@@ -26,7 +26,7 @@ static const uint16_t TEXTURE_O = 0x9009;
 static const uint16_t TILES[] PROGMEM = {TEXTURE_T, TEXTURE_Z, TEXTURE_S, TEXTURE_J, TEXTURE_L, TEXTURE_I, TEXTURE_O};
 static const char TILE_CHARS[] PROGMEM = {'T', 'Z', 'S', 'J', 'L', 'I', 'O'};
 
-static const int8_t TILEPOS[6][4][3][2] PROGMEM = {
+static const int8_t TILEPOS[7][4][3][2] PROGMEM = {
     // T
     {
         {{-1, 0}, {0, 1}, {1, 0}},
@@ -68,6 +68,13 @@ static const int8_t TILEPOS[6][4][3][2] PROGMEM = {
         {{0, 1}, {0, -1}, {0, -2}},
         {{-2, 0}, {-1, 0}, {1, 0}},
         {{0, 2}, {0, 1}, {0, -1}},
+    },
+    // O
+    {
+        {{0, -1}, {1, 0}, {1, -1}},
+        {{0, -1}, {1, 0}, {1, -1}},
+        {{0, -1}, {1, 0}, {1, -1}},
+        {{0, -1}, {1, 0}, {1, -1}},
     },
 };
 
@@ -139,18 +146,10 @@ void drawTile(uint8_t x, uint8_t y, int8_t tileIdx) {
 static void drawCurrent(bool isWhite) {
   int8_t tileIdx = isWhite ? currentTile : -1;
 
-  if (currentTile == TILE_O) {
-    for (uint8_t i = 0; i < 2; i++) {
-      for (uint8_t j = 0; j < 2; j++) {
-        drawTile(currentTileX + i, currentTileY - j, tileIdx);
-      }
-    }
-  } else {
-    drawTile(currentTileX, currentTileY, tileIdx);
-    for (uint8_t i = 0; i < 3; i++) {
-      drawTile(currentTileX + (int8_t)pgm_read_byte(&TILEPOS[currentTile][currentTileRot][i][0]),
-               currentTileY + (int8_t)pgm_read_byte(&TILEPOS[currentTile][currentTileRot][i][1]), tileIdx);
-    }
+  drawTile(currentTileX, currentTileY, tileIdx);
+  for (uint8_t i = 0; i < 3; i++) {
+    drawTile(currentTileX + (int8_t)pgm_read_byte(&TILEPOS[currentTile][currentTileRot][i][0]),
+             currentTileY + (int8_t)pgm_read_byte(&TILEPOS[currentTile][currentTileRot][i][1]), tileIdx);
   }
 }
 
@@ -159,23 +158,13 @@ static inline bool testPosRot(uint8_t x, uint8_t y) {
 }
 
 static bool isNextPositionOk(int8_t offX, int8_t offY, uint8_t newRot) {
-  if (currentTile == TILE_O) {
-    for (uint8_t i = 0; i < 2; i++) {
-      for (uint8_t j = 0; j < 2; j++) {
-        if (!testPosRot(currentTileX + offX + i, currentTileY + offY - j)) {
-          return false;
-        }
-      }
-    }
-  } else {
-    if (!testPosRot(currentTileX + offX, currentTileY + offY)) {
+  if (!testPosRot(currentTileX + offX, currentTileY + offY)) {
+    return false;
+  }
+  for (uint8_t i = 0; i < 3; i++) {
+    if (!testPosRot(currentTileX + offX + (int8_t)pgm_read_byte(&TILEPOS[currentTile][newRot][i][0]),
+                    currentTileY + offY + (int8_t)pgm_read_byte(&TILEPOS[currentTile][newRot][i][1]))) {
       return false;
-    }
-    for (uint8_t i = 0; i < 3; i++) {
-      if (!testPosRot(currentTileX + offX + (int8_t)pgm_read_byte(&TILEPOS[currentTile][newRot][i][0]),
-                      currentTileY + offY + (int8_t)pgm_read_byte(&TILEPOS[currentTile][newRot][i][1]))) {
-        return false;
-      }
     }
   }
 
@@ -306,18 +295,10 @@ void tickGame() {
     currentTileY--;
     drawCurrent(true);
   } else {
-    if (currentTile == TILE_O) {
-      for (uint8_t i = 0; i < 2; i++) {
-        for (uint8_t j = 0; j < 2; j++) {
-          setBoard(currentTileX + i, currentTileY - j, currentTile);
-        }
-      }
-    } else {
-      setBoard(currentTileX, currentTileY, currentTile);
-      for (uint8_t i = 0; i < 3; i++) {
-        setBoard(currentTileX + (int8_t)pgm_read_byte(&TILEPOS[currentTile][currentTileRot][i][0]),
-                 currentTileY + (int8_t)pgm_read_byte(&TILEPOS[currentTile][currentTileRot][i][1]), currentTile);
-      }
+    setBoard(currentTileX, currentTileY, currentTile);
+    for (uint8_t i = 0; i < 3; i++) {
+      setBoard(currentTileX + (int8_t)pgm_read_byte(&TILEPOS[currentTile][currentTileRot][i][0]),
+               currentTileY + (int8_t)pgm_read_byte(&TILEPOS[currentTile][currentTileRot][i][1]), currentTile);
     }
     if (!nextTile(false)) {
       Serial.println("game over");
