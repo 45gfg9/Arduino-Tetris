@@ -348,7 +348,9 @@ void handleInput(input_t input) {
     } else if (input == TR_IN_DOWN && isNextPositionOk(0, -1, currentTileRot)) {
       currentTileY--;
     } else if (input == TR_IN_LOCK) {
-      // NYI
+      while (isNextPositionOk(0, -1, currentTileRot)) {
+        currentTileY--;
+      }
     } else if (input == TR_IN_ROT_CW || input == TR_IN_ROT_CCW) {
       rotateCurrent(input == TR_IN_ROT_CW);
     }
