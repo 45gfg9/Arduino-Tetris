@@ -29,45 +29,45 @@ static const char TILE_CHARS[] PROGMEM = {'T', 'Z', 'S', 'J', 'L', 'I', 'O'};
 static const int8_t TILEPOS[6][4][3][2] PROGMEM = {
     // T
     {
-        {{-1, 0}, {0, -1}, {1, 0}},
-        {{0, 1}, {0, -1}, {1, 0}},
         {{-1, 0}, {0, 1}, {1, 0}},
-        {{-1, 0}, {0, -1}, {0, 1}},
+        {{0, -1}, {0, 1}, {1, 0}},
+        {{-1, 0}, {0, -1}, {1, 0}},
+        {{-1, 0}, {0, 1}, {0, -1}},
     },
     // Z
     {
-        {{-1, -1}, {0, -1}, {1, 0}},
-        {{0, 1}, {1, -1}, {1, 0}},
-        {{-1, 0}, {1, 1}, {0, 1}},
-        {{-1, 0}, {0, -1}, {-1, 1}},
+        {{-1, 1}, {0, 1}, {1, 0}},
+        {{0, -1}, {1, 1}, {1, 0}},
+        {{-1, 0}, {1, -1}, {0, -1}},
+        {{-1, 0}, {0, 1}, {-1, -1}},
     },
     // S
     {
-        {{-1, 0}, {0, -1}, {1, -1}},
-        {{1, 1}, {0, -1}, {1, 0}},
-        {{-1, 1}, {0, 1}, {1, 0}},
-        {{-1, 0}, {0, 1}, {-1, -1}},
+        {{-1, 0}, {0, 1}, {1, 1}},
+        {{1, -1}, {0, 1}, {1, 0}},
+        {{-1, -1}, {0, -1}, {1, 0}},
+        {{-1, 0}, {0, -1}, {-1, 1}},
     },
     // J
     {
-        {{-1, -1}, {-1, 0}, {1, 0}},
-        {{1, -1}, {0, -1}, {0, 1}},
-        {{-1, 0}, {1, 0}, {1, 1}},
-        {{0, -1}, {0, 1}, {-1, 1}},
+        {{-1, 1}, {-1, 0}, {1, 0}},
+        {{1, 1}, {0, 1}, {0, -1}},
+        {{-1, 0}, {1, 0}, {1, -1}},
+        {{0, 1}, {0, -1}, {-1, -1}},
     },
     // L
     {
-        {{-1, 0}, {1, -1}, {1, 0}},
-        {{0, 1}, {0, -1}, {1, 1}},
-        {{-1, 0}, {-1, 1}, {1, 0}},
-        {{0, 1}, {0, -1}, {-1, -1}},
+        {{-1, 0}, {1, 1}, {1, 0}},
+        {{0, -1}, {0, 1}, {1, -1}},
+        {{-1, 0}, {-1, -1}, {1, 0}},
+        {{0, -1}, {0, 1}, {-1, 1}},
     },
     // I
     {
         {{-1, 0}, {1, 0}, {2, 0}},
-        {{0, -1}, {0, 1}, {0, 2}},
+        {{0, 1}, {0, -1}, {0, -2}},
         {{-2, 0}, {-1, 0}, {1, 0}},
-        {{0, -2}, {0, -1}, {0, 1}},
+        {{0, 2}, {0, 1}, {0, -1}},
     },
 };
 
@@ -90,16 +90,22 @@ unsigned int score;
 unsigned long gameTicks;
 
 // board array, 4 bits tile index per block
-static uint8_t gameBoard[BOARD_W * BOARD_H / 2];
+// -1 indicates empty
+static int8_t gameBoard[BOARD_W * BOARD_H / 2];
 
-uint8_t getBoard(uint8_t x, uint8_t y) {
-  uint8_t b = gameBoard[y * BOARD_W + x];
-  return x % 2 ? b >> 4 : b & 0x0f;
+int8_t getBoard(uint8_t x, uint8_t y) {
+  if (x < BOARD_W && y < BOARD_H) {
+    int8_t b = gameBoard[(y * BOARD_W + x) / 2];
+    return (x % 2) ? b >> 4 : ((int8_t)(b << 4) >> 4);
+  }
+  return (x >= BOARD_W || y > 127) ? 0 : -1;
 }
 
-void setBoard(uint8_t x, uint8_t y, uint8_t tileIdx) {
-  uint8_t i = y * BOARD_W + x;
-  gameBoard[i] = x % 2 ? ((gameBoard[i] & 0x0f) | (tileIdx << 4)) : ((gameBoard[i] & 0xf0) | tileIdx);
+void setBoard(uint8_t x, uint8_t y, int8_t tileIdx) {
+  if (x < BOARD_W || y < BOARD_H) {
+    uint8_t i = (y * BOARD_W + x) / 2;
+    gameBoard[i] = (x % 2) ? ((tileIdx << 4) | (gameBoard[i] & 0x0f)) : ((gameBoard[i] & 0xf0) | (tileIdx & 0x0f));
+  }
 }
 
 // draw a 6x6 tile
@@ -109,7 +115,7 @@ void drawTile(uint8_t x, uint8_t y, int8_t tileIdx) {
   }
 
   x = TILESIZ * x + 2;
-  y = TILESIZ * y + 12;
+  y = TILESIZ * (BOARD_H - 1 - y) + 12;
 
   if (tileIdx == -1) {
     u8g2.setDrawColor(0);
@@ -136,7 +142,7 @@ static void drawCurrent(bool isWhite) {
   if (currentTile == TILE_O) {
     for (uint8_t i = 0; i < 2; i++) {
       for (uint8_t j = 0; j < 2; j++) {
-        drawTile(currentTileX + i, currentTileY + j, tileIdx);
+        drawTile(currentTileX + i, currentTileY - j, tileIdx);
       }
     }
   } else {
@@ -148,22 +154,57 @@ static void drawCurrent(bool isWhite) {
   }
 }
 
-static void rotateCurrent(bool isClockwise) {
-  uint8_t nextTileRot = (currentTileRot + (isClockwise ? 1 : 3)) % 4;
+static inline bool testPosRot(uint8_t x, uint8_t y) {
+  return getBoard(x, y) == -1;
+}
 
-  if (currentTile == TILE_I) {
-    if ((currentTileRot == 0 && nextTileRot == 1) || (currentTileRot == 3 && nextTileRot == 2)) {
-      currentTileX++;
-    } else if ((currentTileRot == 1 && nextTileRot == 0) || (currentTileRot == 2 && nextTileRot == 3)) {
-      currentTileX--;
-    } else if ((currentTileRot == 0 && nextTileRot == 3) || (currentTileRot == 1 && nextTileRot == 2)) {
-      currentTileY++;
-    } else if ((currentTileRot == 3 && nextTileRot == 0) || (currentTileRot == 2 && nextTileRot == 1)) {
-      currentTileY--;
+static bool isNextPositionOk(int8_t offX, int8_t offY, uint8_t newRot) {
+  if (currentTile == TILE_O) {
+    for (uint8_t i = 0; i < 2; i++) {
+      for (uint8_t j = 0; j < 2; j++) {
+        if (!testPosRot(currentTileX + offX + i, currentTileY + offY - j)) {
+          return false;
+        }
+      }
+    }
+  } else {
+    if (!testPosRot(currentTileX + offX, currentTileY + offY)) {
+      return false;
+    }
+    for (uint8_t i = 0; i < 3; i++) {
+      if (!testPosRot(currentTileX + offX + (int8_t)pgm_read_byte(&TILEPOS[currentTile][newRot][i][0]),
+                      currentTileY + offY + (int8_t)pgm_read_byte(&TILEPOS[currentTile][newRot][i][1]))) {
+        return false;
+      }
     }
   }
 
-  currentTileRot = nextTileRot;
+  return true;
+}
+
+// TODO: wall kicks
+static void rotateCurrent(bool isClockwise) {
+  uint8_t newTileRot = (currentTileRot + (isClockwise ? 1 : 3)) % 4;
+  uint8_t tileOffX = 0;
+  uint8_t tileOffY = 0;
+
+  if (currentTile == TILE_I) {
+    if ((currentTileRot == 0 && newTileRot == 1) || (currentTileRot == 3 && newTileRot == 2)) {
+      tileOffX++;
+    } else if ((currentTileRot == 1 && newTileRot == 0) || (currentTileRot == 2 && newTileRot == 3)) {
+      tileOffX--;
+    } else if ((currentTileRot == 0 && newTileRot == 3) || (currentTileRot == 1 && newTileRot == 2)) {
+      tileOffY++;
+    } else if ((currentTileRot == 3 && newTileRot == 0) || (currentTileRot == 2 && newTileRot == 1)) {
+      tileOffY--;
+    }
+  }
+
+  if (isNextPositionOk(tileOffX, tileOffY, newTileRot)) {
+    currentTileRot = newTileRot;
+    currentTileX += tileOffX;
+    currentTileY -= tileOffY;
+  }
 }
 
 static void drawScore() {
@@ -191,7 +232,8 @@ void enterIdleMode() {
   u8g2.sendBuffer();
 }
 
-static void nextTile(bool isHold) {
+// return false on game over
+static bool nextTile(bool isHold) {
   uint8_t nextTile;
   if (isHold) {
     nextTile = currentTile | 0x80;
@@ -201,14 +243,19 @@ static void nextTile(bool isHold) {
   currentTile = (tile_t)(holdBoxTile & 0x7);
   holdBoxTile = nextTile;
   currentTileX = 4;
-  currentTileY = 0;
+  currentTileY = BOARD_H - 1;
   currentTileRot = 0;
+
+  if (!isNextPositionOk(0, 0, currentTileRot)) {
+    return false;
+  }
 
   char str[] = {pgm_read_byte(TILE_CHARS + (holdBoxTile & 0x7)), 0};
   u8g2.setDrawColor(0);
   u8g2.drawBox(58, 0, 6, 8);
   u8g2.setDrawColor(1);
   u8g2.drawStr(58, 8, str);
+  return true;
 }
 
 void startGame(bool isAuto) {
@@ -218,12 +265,12 @@ void startGame(bool isAuto) {
   u8g2.sendBuffer();
   gameTicks = 0;
 
+  memset(gameBoard, -1, sizeof gameBoard);
   holdBoxTile = rand() % 7;
   nextTile(false);
   drawCurrent(true);
   u8g2.sendBuffer();
 
-  memset(gameBoard, 0, sizeof gameBoard);
   isPaused = false;
 }
 
@@ -254,9 +301,28 @@ void tickGame() {
     return;
   }
 
-  drawCurrent(false);
-  currentTileY++;
-  drawCurrent(true);
+  if (isNextPositionOk(0, -1, currentTileRot)) {
+    drawCurrent(false);
+    currentTileY--;
+    drawCurrent(true);
+  } else {
+    if (currentTile == TILE_O) {
+      for (uint8_t i = 0; i < 2; i++) {
+        for (uint8_t j = 0; j < 2; j++) {
+          setBoard(currentTileX + i, currentTileY - j, currentTile);
+        }
+      }
+    } else {
+      setBoard(currentTileX, currentTileY, currentTile);
+      for (uint8_t i = 0; i < 3; i++) {
+        setBoard(currentTileX + (int8_t)pgm_read_byte(&TILEPOS[currentTile][currentTileRot][i][0]),
+                 currentTileY + (int8_t)pgm_read_byte(&TILEPOS[currentTile][currentTileRot][i][1]), currentTile);
+      }
+    }
+    if (!nextTile(false)) {
+      Serial.println("game over");
+    }
+  }
   u8g2.sendBuffer();
 }
 
@@ -275,12 +341,12 @@ void handleInput(input_t input) {
     nextTile(true);
   } else {
     drawCurrent(false);
-    if (input == TR_IN_LEFT) {
+    if (input == TR_IN_LEFT && isNextPositionOk(-1, 0, currentTileRot)) {
       currentTileX--;
-    } else if (input == TR_IN_RIGHT) {
+    } else if (input == TR_IN_RIGHT && isNextPositionOk(1, 0, currentTileRot)) {
       currentTileX++;
-    } else if (input == TR_IN_DOWN) {
-      currentTileY++;
+    } else if (input == TR_IN_DOWN && isNextPositionOk(0, -1, currentTileRot)) {
+      currentTileY--;
     } else if (input == TR_IN_LOCK) {
       // NYI
     } else if (input == TR_IN_ROT_CW || input == TR_IN_ROT_CCW) {
