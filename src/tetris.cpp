@@ -28,6 +28,7 @@ static const uint16_t TEXTURE_O = 0x9009;
 static const uint16_t TILES[] PROGMEM = {TEXTURE_T, TEXTURE_Z, TEXTURE_S, TEXTURE_J, TEXTURE_L, TEXTURE_I, TEXTURE_O};
 static const char TILE_CHARS[] PROGMEM = {'T', 'Z', 'S', 'J', 'L', 'I', 'O'};
 
+// [tile][currentRot][3 more blocks][x, y]
 static const int8_t TILEPOS[7][4][3][2] PROGMEM = {
     // T
     {
@@ -80,6 +81,38 @@ static const int8_t TILEPOS[7][4][3][2] PROGMEM = {
     },
 };
 
+// [isIBlock][isClockwise][currentRot][5 tests][x, y]
+static const int8_t WALL_KICK_DATA[2][2][4][5][2] PROGMEM = {
+    {
+        {
+            /* 0>>3 */ {{0, 0}, {1, 0}, {1, 1}, {0, -2}, {1, -2}},
+            /* 1>>0 */ {{0, 0}, {1, 0}, {1, -1}, {0, 2}, {1, 2}},
+            /* 2>>1 */ {{0, 0}, {-1, 0}, {-1, 1}, {0, -2}, {-1, -2}},
+            /* 3>>2 */ {{0, 0}, {-1, 0}, {-1, -1}, {0, 2}, {-1, 2}},
+        },
+        {
+            /* 0>>1 */ {{0, 0}, {-1, 0}, {-1, 1}, {0, -2}, {-1, -2}},
+            /* 1>>2 */ {{0, 0}, {1, 0}, {1, -1}, {0, 2}, {1, 2}},
+            /* 2>>3 */ {{0, 0}, {1, 0}, {1, 1}, {0, -2}, {1, -2}},
+            /* 3>>0 */ {{0, 0}, {-1, 0}, {-1, -1}, {0, 2}, {-1, 2}},
+        },
+    },
+    {
+        {
+            /* 0>>3 */ {{0, -1}, {-1, -1}, {2, -1}, {-1, 1}, {2, -2}},
+            /* 1>>0 */ {{-1, 0}, {1, 0}, {-2, 0}, {1, 1}, {-2, -2}},
+            /* 2>>1 */ {{0, 1}, {1, 1}, {-2, 1}, {1, -1}, {-2, 2}},
+            /* 3>>2 */ {{1, 0}, {-1, 0}, {2, 0}, {-1, -1}, {2, 2}},
+        },
+        {
+            /* 0>>1 */ {{1, 0}, {-1, 0}, {2, 0}, {-1, -1}, {2, 2}},
+            /* 1>>2 */ {{0, -1}, {-1, -1}, {2, -1}, {-1, 1}, {2, -2}},
+            /* 2>>3 */ {{-1, 0}, {1, 0}, {-2, 0}, {1, 1}, {-2, -2}},
+            /* 3>>0 */ {{0, 1}, {1, 1}, {-2, 1}, {1, -1}, {-2, 2}},
+        },
+    },
+};
+
 // hold box
 // the highest bit indicates whether it was just swapped with current tile
 static uint8_t holdBoxTile;
@@ -102,20 +135,23 @@ static uint8_t gameTicks;
 
 // board array, 4 bits tile index per block
 // -1 indicates empty
-static int8_t gameBoard[BOARD_W * BOARD_H / 2];
+static int8_t board[BOARD_H][(BOARD_W + 1) / 2];
 
 int8_t getBoard(uint8_t x, uint8_t y) {
   if (x < BOARD_W && y < BOARD_H) {
-    int8_t b = gameBoard[(y * BOARD_W + x) / 2];
-    return (x % 2) ? b >> 4 : ((int8_t)(b << 4) >> 4);
+    int8_t b = board[y][x / 2];
+    if (x % 2 == 0) {
+      b <<= 4;
+    }
+    return b >> 4;
   }
   return (x >= BOARD_W || y > 127) ? 0 : -1;
 }
 
 void setBoard(uint8_t x, uint8_t y, int8_t tileIdx) {
   if (x < BOARD_W || y < BOARD_H) {
-    uint8_t i = (y * BOARD_W + x) / 2;
-    gameBoard[i] = (x % 2) ? ((tileIdx << 4) | (gameBoard[i] & 0x0f)) : ((gameBoard[i] & 0xf0) | (tileIdx & 0x0f));
+    int8_t *p = &board[y][x / 2];
+    *p = (x % 2) ? ((tileIdx << 4) | (*p & 0x0f)) : ((*p & 0xf0) | (tileIdx & 0x0f));
   }
 }
 
@@ -175,28 +211,21 @@ static bool isNextPositionOk(int8_t offX, int8_t offY, uint8_t newRot) {
   return true;
 }
 
-// TODO: wall kicks
 static void rotateCurrent(bool isClockwise) {
   uint8_t newTileRot = (currentTileRot + (isClockwise ? 1 : 3)) % 4;
-  uint8_t tileOffX = 0;
-  uint8_t tileOffY = 0;
 
-  if (currentTile == TILE_I) {
-    if ((currentTileRot == 0 && newTileRot == 1) || (currentTileRot == 3 && newTileRot == 2)) {
-      tileOffX++;
-    } else if ((currentTileRot == 1 && newTileRot == 0) || (currentTileRot == 2 && newTileRot == 3)) {
-      tileOffX--;
-    } else if ((currentTileRot == 0 && newTileRot == 3) || (currentTileRot == 1 && newTileRot == 2)) {
-      tileOffY++;
-    } else if ((currentTileRot == 3 && newTileRot == 0) || (currentTileRot == 2 && newTileRot == 1)) {
-      tileOffY--;
+  const bool isI = currentTile == TILE_I;
+
+  for (uint8_t i = 0; i < 5; i++) {
+    int8_t tileOffX = (int8_t)pgm_read_byte(&WALL_KICK_DATA[isI][isClockwise][currentTileRot][i][0]);
+    int8_t tileOffY = (int8_t)pgm_read_byte(&WALL_KICK_DATA[isI][isClockwise][currentTileRot][i][1]);
+
+    if (isNextPositionOk(tileOffX, tileOffY, newTileRot)) {
+      currentTileRot = newTileRot;
+      currentTileX += tileOffX;
+      currentTileY += tileOffY;
+      break;
     }
-  }
-
-  if (isNextPositionOk(tileOffX, tileOffY, newTileRot)) {
-    currentTileRot = newTileRot;
-    currentTileX += tileOffX;
-    currentTileY -= tileOffY;
   }
 }
 
@@ -258,10 +287,9 @@ void startGame(bool isAuto) {
   mode = isAuto ? MODE_AUTO : MODE_STARTED;
   drawGameFrame();
   drawScore();
-  u8g2.sendBuffer();
   gameTicks = 0;
 
-  memset(gameBoard, -1, sizeof gameBoard);
+  memset(board, -1, sizeof board);
   holdBoxTile = rand() % 7;
   nextTile(false);
   drawCurrent(true);
@@ -271,7 +299,6 @@ void startGame(bool isAuto) {
 }
 
 static void checkElimination() {
-  const int BYTES_PER_ROW = BOARD_W / 2;
   bool isLineEmpty = false;
   uint8_t eliminatedLines = 0;
 
@@ -288,9 +315,8 @@ static void checkElimination() {
     }
 
     if (isLineFull) {
-      memmove(gameBoard + BYTES_PER_ROW * y, gameBoard + (BYTES_PER_ROW + 1) * y,
-              sizeof gameBoard - (BYTES_PER_ROW + 1) * y);
-      memset(gameBoard + sizeof gameBoard - BYTES_PER_ROW, -1, BYTES_PER_ROW);
+      memmove(board[y], board[y + 1], sizeof board - sizeof board[0] * (y + 1));
+      memset(board[BOARD_H - 1], -1, sizeof board[0]);
       y--;
       eliminatedLines++;
     }
