@@ -41,6 +41,8 @@ void loop() {
       enterIdleMode();
     } else if (mode == MODE_STARTED) {
       handleInput(input);
+    } else if (mode == MODE_OVER) {
+      enterIdleMode();
     } else if (input == TR_IN_LOCK) {
       startGame(false);
     }

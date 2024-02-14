@@ -145,14 +145,16 @@ int8_t getBoard(uint8_t x, uint8_t y) {
     }
     return b >> 4;
   }
-  return (x >= BOARD_W || y > 127) ? 0 : -1;
+  return (x >= BOARD_W || y > 127) ? 7 : -1;
 }
 
-void setBoard(uint8_t x, uint8_t y, int8_t tileIdx) {
-  if (x < BOARD_W || y < BOARD_H) {
+bool setBoard(uint8_t x, uint8_t y, int8_t tileIdx) {
+  if (y < BOARD_H && getBoard(x, y) == -1) {
     int8_t *p = &board[y][x / 2];
     *p = (x % 2) ? ((tileIdx << 4) | (*p & 0x0f)) : ((*p & 0xf0) | (tileIdx & 0x0f));
+    return true;
   }
+  return false;
 }
 
 // draw a 6x6 tile
@@ -257,8 +259,7 @@ void enterIdleMode() {
   u8g2.sendBuffer();
 }
 
-// return false on game over
-static bool nextTile(bool isHold) {
+static void nextTile(bool isHold) {
   uint8_t nextTile;
   if (isHold) {
     nextTile = currentTile | 0x80;
@@ -268,32 +269,26 @@ static bool nextTile(bool isHold) {
   currentTile = (tile_t)(holdBoxTile & 0x7);
   holdBoxTile = nextTile;
   currentTileX = 4;
-  currentTileY = BOARD_H - 1;
+  currentTileY = BOARD_H;
   currentTileRot = 0;
-
-  if (!isNextPositionOk(0, 0, currentTileRot)) {
-    return false;
-  }
 
   char str[] = {pgm_read_byte(TILE_CHARS + (holdBoxTile & 0x7)), 0};
   u8g2.setDrawColor(0);
   u8g2.drawBox(58, 0, 6, 8);
   u8g2.setDrawColor(1);
   u8g2.drawStr(58, 8, str);
-  return true;
+
+  gameTicks = TICKS_PER_UNIT_TIME - 1;
 }
 
 void startGame(bool isAuto) {
   mode = isAuto ? MODE_AUTO : MODE_STARTED;
   drawGameFrame();
   drawScore();
-  gameTicks = 0;
 
   memset(board, -1, sizeof board);
   holdBoxTile = rand() % 7;
   nextTile(false);
-  drawCurrent(true);
-  u8g2.sendBuffer();
 
   isPaused = false;
 }
@@ -368,22 +363,22 @@ void tickGame() {
     drawCurrent(false);
     currentTileY--;
     drawCurrent(true);
+    u8g2.sendBuffer();
   } else {
-    setBoard(currentTileX, currentTileY, currentTile);
+    bool ok = setBoard(currentTileX, currentTileY, currentTile);
     for (uint8_t i = 0; i < 3; i++) {
-      setBoard(currentTileX + (int8_t)pgm_read_byte(&TILEPOS[currentTile][currentTileRot][i][0]),
-               currentTileY + (int8_t)pgm_read_byte(&TILEPOS[currentTile][currentTileRot][i][1]), currentTile);
+      ok &= setBoard(currentTileX + (int8_t)pgm_read_byte(&TILEPOS[currentTile][currentTileRot][i][0]),
+                     currentTileY + (int8_t)pgm_read_byte(&TILEPOS[currentTile][currentTileRot][i][1]), currentTile);
     }
-
-    checkElimination();
-
-    if (nextTile(false)) {
-      drawCurrent(true);
+    if (ok) {
+      checkElimination();
+      nextTile(false);
     } else {
-      Serial.println("game over");
+      u8g2.drawStr(24, 8, "OVER");
+      mode = MODE_OVER;
+      u8g2.sendBuffer();
     }
   }
-  u8g2.sendBuffer();
 }
 
 void handleInput(input_t input) {
@@ -410,8 +405,7 @@ void handleInput(input_t input) {
     } else if (input == TR_IN_RIGHT && isNextPositionOk(1, 0, currentTileRot)) {
       currentTileX++;
     } else if (input == TR_IN_DOWN && isNextPositionOk(0, -1, currentTileRot)) {
-      currentTileY--;
-      gameTicks = 0;
+      gameTicks = TICKS_PER_UNIT_TIME - 1;
     } else if (input == TR_IN_LOCK) {
       while (isNextPositionOk(0, -1, currentTileRot)) {
         currentTileY--;

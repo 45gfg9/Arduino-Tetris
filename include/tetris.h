@@ -25,7 +25,7 @@ enum input_t : uint8_t {
   TR_IN_NONE,    // no input
 };
 
-enum gamemode_t : uint8_t { MODE_STARTED, MODE_AUTO, MODE_IDLE };
+enum gamemode_t : uint8_t { MODE_STARTED, MODE_AUTO, MODE_IDLE, MODE_OVER };
 
 // display
 extern U8G2_SSD1306_128X64_NONAME_F_4W_HW_SPI u8g2;
