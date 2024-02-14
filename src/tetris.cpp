@@ -6,6 +6,8 @@
 #define BOARD_H 19
 #define TILESIZ 6
 
+#define TICKS_PER_UNIT_TIME (1200 / TICK_MS)
+
 enum tile_t : int8_t {
   TILE_T,
   TILE_Z,
@@ -93,8 +95,10 @@ static bool isPaused;
 
 gamemode_t mode;
 
-unsigned int score;
-unsigned long gameTicks;
+// score
+static unsigned int score;
+// ticks
+static uint8_t gameTicks;
 
 // board array, 4 bits tile index per block
 // -1 indicates empty
@@ -199,6 +203,9 @@ static void rotateCurrent(bool isClockwise) {
 static void drawScore() {
   char str[6];
   itoa(score, str, 10);
+  u8g2.setDrawColor(0);
+  u8g2.drawBox(0, 0, 40, 8);
+  u8g2.setDrawColor(1);
   u8g2.drawStr(0, 8, str);
 }
 
@@ -263,6 +270,45 @@ void startGame(bool isAuto) {
   isPaused = false;
 }
 
+static void checkElimination() {
+  const int BYTES_PER_ROW = BOARD_W / 2;
+  bool isLineEmpty = false;
+  uint8_t eliminatedLines = 0;
+
+  uint8_t y = 0;
+  for (; y < BOARD_H && !isLineEmpty; y++) {
+    isLineEmpty = true;
+    bool isLineFull = true;
+    for (uint8_t x = 0; x < BOARD_W && (isLineEmpty || isLineFull); x++) {
+      if (getBoard(x, y) == -1) {
+        isLineFull = false;
+      } else {
+        isLineEmpty = false;
+      }
+    }
+
+    if (isLineFull) {
+      memmove(gameBoard + BYTES_PER_ROW * y, gameBoard + (BYTES_PER_ROW + 1) * y,
+              sizeof gameBoard - (BYTES_PER_ROW + 1) * y);
+      memset(gameBoard + sizeof gameBoard - BYTES_PER_ROW, -1, BYTES_PER_ROW);
+      y--;
+      eliminatedLines++;
+    }
+  }
+
+  if (eliminatedLines) {
+    // redraw the board
+    for (uint8_t z = 0; z < y - 1 + eliminatedLines; z++) {
+      for (uint8_t x = 0; x < BOARD_W; x++) {
+        drawTile(x, z, getBoard(x, z));
+      }
+    }
+
+    score += eliminatedLines * (eliminatedLines + 1) / 2;
+    drawScore();
+  }
+}
+
 void tickGame() {
   ++gameTicks;
 
@@ -273,8 +319,8 @@ void tickGame() {
       handleInput((input_t)rnd);
     }
 
-    if (gameTicks % 10 == 0) {
-      unsigned int ticks = gameTicks / 10;
+    if (gameTicks % (TICKS_PER_UNIT_TIME / 2) == 0) {
+      unsigned int ticks = gameTicks / (TICKS_PER_UNIT_TIME / 2);
       if (ticks % 2) {
         u8g2.setDrawColor(1);
         u8g2.drawStr(24, 8, "AUTO");
@@ -286,9 +332,11 @@ void tickGame() {
     }
   }
 
-  if (gameTicks % 20 || isPaused) {
+  if (gameTicks % TICKS_PER_UNIT_TIME || isPaused) {
     return;
   }
+
+  gameTicks = 0;
 
   if (isNextPositionOk(0, -1, currentTileRot)) {
     drawCurrent(false);
@@ -300,7 +348,12 @@ void tickGame() {
       setBoard(currentTileX + (int8_t)pgm_read_byte(&TILEPOS[currentTile][currentTileRot][i][0]),
                currentTileY + (int8_t)pgm_read_byte(&TILEPOS[currentTile][currentTileRot][i][1]), currentTile);
     }
-    if (!nextTile(false)) {
+
+    checkElimination();
+
+    if (nextTile(false)) {
+      drawCurrent(true);
+    } else {
       Serial.println("game over");
     }
   }
@@ -313,13 +366,17 @@ void handleInput(input_t input) {
     if (isPaused) {
       u8g2.setDrawColor(1);
       u8g2.drawStr(24, 8, "PAUSED");
+      u8g2.sendBuffer();
     } else {
       u8g2.setDrawColor(0);
       u8g2.drawBox(24, 0, 32, 8);
     }
+  } else if (isPaused) {
+    return;
   } else if (input == TR_IN_HOLD && ((holdBoxTile & 0x80) == 0)) {
     drawCurrent(false);
     nextTile(true);
+    drawCurrent(true);
   } else {
     drawCurrent(false);
     if (input == TR_IN_LEFT && isNextPositionOk(-1, 0, currentTileRot)) {
@@ -328,10 +385,12 @@ void handleInput(input_t input) {
       currentTileX++;
     } else if (input == TR_IN_DOWN && isNextPositionOk(0, -1, currentTileRot)) {
       currentTileY--;
+      gameTicks = 0;
     } else if (input == TR_IN_LOCK) {
       while (isNextPositionOk(0, -1, currentTileRot)) {
         currentTileY--;
       }
+      gameTicks = TICKS_PER_UNIT_TIME - 1;
     } else if (input == TR_IN_ROT_CW || input == TR_IN_ROT_CCW) {
       rotateCurrent(input == TR_IN_ROT_CW);
     }

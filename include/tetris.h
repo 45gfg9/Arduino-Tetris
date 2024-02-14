@@ -10,7 +10,7 @@
 #define PIN_DC 9
 #define PIN_RST 10
 
-#define TICK_MS 100
+#define TICK_MS 75
 
 // tetris input
 enum input_t : uint8_t {
@@ -32,10 +32,6 @@ extern U8G2_SSD1306_128X64_NONAME_F_4W_HW_SPI u8g2;
 
 // current game mode
 extern gamemode_t mode;
-// score
-extern unsigned int score;
-// ticks
-extern unsigned long gameTicks;
 
 void drawGameFrame();
 
