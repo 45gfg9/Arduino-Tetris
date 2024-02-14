@@ -148,8 +148,12 @@ int8_t getBoard(uint8_t x, uint8_t y) {
   return (x >= BOARD_W || y > 127) ? 7 : -1;
 }
 
+static inline bool testPosRot(uint8_t x, uint8_t y) {
+  return getBoard(x, y) == -1;
+}
+
 bool setBoard(uint8_t x, uint8_t y, int8_t tileIdx) {
-  if (y < BOARD_H && getBoard(x, y) == -1) {
+  if (y < BOARD_H && testPosRot(x, y)) {
     int8_t *p = &board[y][x / 2];
     *p = (x % 2) ? ((tileIdx << 4) | (*p & 0x0f)) : ((*p & 0xf0) | (tileIdx & 0x0f));
     return true;
@@ -193,10 +197,6 @@ static void drawCurrent(bool isWhite) {
     drawTile(currentTileX + (int8_t)pgm_read_byte(&TILEPOS[currentTile][currentTileRot][i][0]),
              currentTileY + (int8_t)pgm_read_byte(&TILEPOS[currentTile][currentTileRot][i][1]), tileIdx);
   }
-}
-
-static inline bool testPosRot(uint8_t x, uint8_t y) {
-  return getBoard(x, y) == -1;
 }
 
 static bool isNextPositionOk(int8_t offX, int8_t offY, uint8_t newRot) {
