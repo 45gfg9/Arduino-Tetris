@@ -387,20 +387,17 @@ void handleInput(input_t input) {
     if (isPaused) {
       u8g2.setDrawColor(1);
       u8g2.drawStr(24, 8, "PAUSED");
-      u8g2.sendBuffer();
     } else {
       u8g2.setDrawColor(0);
       u8g2.drawBox(24, 0, 32, 8);
     }
   } else if (isPaused) {
     return;
-  } else if (input == TR_IN_HOLD && ((holdBoxTile & 0x80) == 0)) {
-    drawCurrent(false);
-    nextTile(true);
-    drawCurrent(true);
   } else {
     drawCurrent(false);
-    if (input == TR_IN_LEFT && isNextPositionOk(-1, 0, currentTileRot)) {
+    if (input == TR_IN_HOLD && ((holdBoxTile & 0x80) == 0)) {
+      nextTile(true);
+    } else if (input == TR_IN_LEFT && isNextPositionOk(-1, 0, currentTileRot)) {
       currentTileX--;
     } else if (input == TR_IN_RIGHT && isNextPositionOk(1, 0, currentTileRot)) {
       currentTileX++;
