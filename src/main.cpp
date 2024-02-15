@@ -18,7 +18,12 @@ void tickGame();
 void setup() {
   Serial.begin(115200);
 
-  srand((analogRead(A5) << 8) ^ analogRead(A0));
+  unsigned long randomSeed = 0;
+  for (uint8_t pin = A0; pin <= A7; pin++) {
+    randomSeed = (randomSeed << 2) ^ analogRead(pin);
+    delayMicroseconds(100);
+  }
+  srandom(randomSeed);
 
   u8g2.begin();
   u8g2.setFont(u8g2_font_5x8_tr);

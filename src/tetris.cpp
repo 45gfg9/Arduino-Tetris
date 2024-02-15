@@ -264,7 +264,7 @@ static void nextTile(bool isHold) {
   if (isHold) {
     nextTile = currentTile | 0x80;
   } else {
-    nextTile = rand() % 7;
+    nextTile = random() % 7;
   }
   currentTile = (tile_t)(holdBoxTile & 0x7);
   holdBoxTile = nextTile;
@@ -287,7 +287,7 @@ void startGame(bool isAuto) {
   drawScore();
 
   memset(board, -1, sizeof board);
-  holdBoxTile = rand() % 7;
+  holdBoxTile = random() % 7;
   nextTile(false);
 
   isPaused = false;
@@ -334,7 +334,7 @@ void tickGame() {
   ++gameTicks;
 
   if (mode == MODE_AUTO) {
-    auto rnd = rand() & 0x3f;
+    auto rnd = random() & 0x3f;
 
     if (rnd < 7) {
       handleInput((input_t)rnd);
