@@ -10,11 +10,6 @@ U8G2_SSD1306_128X64_NONAME_F_4W_HW_SPI u8g2(U8G2_R3, PIN_CS, PIN_DC, PIN_RST);
 static unsigned long lastWake;
 static unsigned long lastInput;
 
-void startGame(bool isAuto);
-void enterIdleMode();
-
-void tickGame();
-
 void setup() {
   Serial.begin(115200);
 
@@ -48,7 +43,7 @@ void loop() {
       handleInput(input);
     } else if (mode == MODE_OVER) {
       enterIdleMode();
-    } else if (input == TR_IN_LOCK) {
+    } else if (input == TR_IN_PAUSE) {
       startGame(false);
     }
   }

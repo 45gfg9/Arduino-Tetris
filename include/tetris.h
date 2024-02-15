@@ -33,9 +33,10 @@ extern U8G2_SSD1306_128X64_NONAME_F_4W_HW_SPI u8g2;
 // current game mode
 extern gamemode_t mode;
 
-void drawGameFrame();
+void startGame(bool isAuto);
+void enterIdleMode();
 
-[[noreturn]] void testLoop();
+void tickGame();
 
 input_t getInput();
 void handleInput(input_t input);
