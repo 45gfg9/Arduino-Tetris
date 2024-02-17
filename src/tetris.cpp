@@ -183,6 +183,7 @@ void drawTile(uint8_t x, uint8_t y, int8_t tileIdx) {
   } else {
     uint16_t b = pgm_read_word(TILES + tileIdx);
 
+    u8g2.setDrawColor(1);
     u8g2.drawFrame(x, y, TILESIZ, TILESIZ);
     for (uint8_t i = TILESIZ - 2; i; --i) {
       for (uint8_t j = TILESIZ - 2; j; --j) {
@@ -192,7 +193,6 @@ void drawTile(uint8_t x, uint8_t y, int8_t tileIdx) {
       }
     }
   }
-  u8g2.setDrawColor(1);
 }
 
 static void drawCurrent(bool isWhite) {
