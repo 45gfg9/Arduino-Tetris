@@ -9,7 +9,6 @@
 
 // D0 - 13 (SCK)
 // D1 - 11 (MOSI)
-
 U8G2_SSD1306_128X64_NONAME_F_4W_HW_SPI u8g2(U8G2_R3, PIN_CS, PIN_DC, PIN_RST);
 
 // milliseconds

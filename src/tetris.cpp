@@ -12,7 +12,7 @@
 #define BOARD_H 19
 #define TILESIZ 6
 
-#define TICKS_PER_UNIT_TIME (1200 / TICK_MS)
+#define TICKS_PER_UNIT_TIME (GAME_SPEED / TICK_MS)
 
 enum tile_t : int8_t {
   TILE_T,
@@ -120,11 +120,11 @@ static const int8_t WALL_KICK_DATA[2][2][4][5][2] PROGMEM = {
 };
 
 // hold box
-// the highest bit indicates whether it was just swapped with current tile
+// the MSB indicates whether it was just swapped with current tile (therefore cannot be swapped again)
 static uint8_t holdBoxTile;
-static tile_t currentTile;
 
-// current tile position and rotation
+// current tile, its position and rotation
+static tile_t currentTile;
 static uint8_t currentTileX;
 static uint8_t currentTileY;
 static uint8_t currentTileRot;
@@ -151,15 +151,17 @@ int8_t getBoard(uint8_t x, uint8_t y) {
     }
     return b >> 4;
   }
-  return (x >= BOARD_W || y > 127) ? 7 : -1;
+  // assume the top is filled with walls
+  // utilizes unsigned overflow
+  return (x >= BOARD_W || y > 127) ? 0 : -1;
 }
 
-static inline bool testPosRot(uint8_t x, uint8_t y) {
+static inline bool isPosEmpty(uint8_t x, uint8_t y) {
   return getBoard(x, y) == -1;
 }
 
 bool setBoard(uint8_t x, uint8_t y, int8_t tileIdx) {
-  if (y < BOARD_H && testPosRot(x, y)) {
+  if (y < BOARD_H && isPosEmpty(x, y)) {
     int8_t *p = &board[y][x / 2];
     *p = (x % 2) ? ((tileIdx << 4) | (*p & 0x0f)) : ((*p & 0xf0) | (tileIdx & 0x0f));
     return true;
@@ -205,12 +207,12 @@ static void drawCurrent(bool isWhite) {
   }
 }
 
-static bool isNextPositionOk(int8_t offX, int8_t offY, uint8_t newRot) {
-  if (!testPosRot(currentTileX + offX, currentTileY + offY)) {
+static bool isNextPosOk(int8_t offX, int8_t offY, uint8_t newRot) {
+  if (!isPosEmpty(currentTileX + offX, currentTileY + offY)) {
     return false;
   }
   for (uint8_t i = 0; i < 3; i++) {
-    if (!testPosRot(currentTileX + offX + (int8_t)pgm_read_byte(&TILEPOS[currentTile][newRot][i][0]),
+    if (!isPosEmpty(currentTileX + offX + (int8_t)pgm_read_byte(&TILEPOS[currentTile][newRot][i][0]),
                     currentTileY + offY + (int8_t)pgm_read_byte(&TILEPOS[currentTile][newRot][i][1]))) {
       return false;
     }
@@ -228,7 +230,7 @@ static void rotateCurrent(bool isClockwise) {
     int8_t tileOffX = (int8_t)pgm_read_byte(&WALL_KICK_DATA[isI][isClockwise][currentTileRot][i][0]);
     int8_t tileOffY = (int8_t)pgm_read_byte(&WALL_KICK_DATA[isI][isClockwise][currentTileRot][i][1]);
 
-    if (isNextPositionOk(tileOffX, tileOffY, newTileRot)) {
+    if (isNextPosOk(tileOffX, tileOffY, newTileRot)) {
       currentTileRot = newTileRot;
       currentTileX += tileOffX;
       currentTileY += tileOffY;
@@ -303,12 +305,15 @@ static void checkElimination() {
   bool isLineEmpty = false;
   uint8_t eliminatedLines = 0;
 
+  // find the lines that are either full or empty
+  // if it's full, eliminate it and move the rest down
+  // if it's empty, stop since the rest are empty too
   uint8_t y = 0;
   for (; y < BOARD_H && !isLineEmpty; y++) {
     isLineEmpty = true;
     bool isLineFull = true;
     for (uint8_t x = 0; x < BOARD_W && (isLineEmpty || isLineFull); x++) {
-      if (getBoard(x, y) == -1) {
+      if (isPosEmpty(x, y)) {
         isLineFull = false;
       } else {
         isLineEmpty = false;
@@ -324,7 +329,7 @@ static void checkElimination() {
   }
 
   if (eliminatedLines) {
-    // redraw the board
+    // redraw the board, also empty the top lines
     for (uint8_t z = 0; z < y - 1 + eliminatedLines; z++) {
       for (uint8_t x = 0; x < BOARD_W; x++) {
         drawTile(x, z, getBoard(x, z));
@@ -365,7 +370,7 @@ void tickGame() {
 
   gameTicks = 0;
 
-  if (isNextPositionOk(0, -1, currentTileRot)) {
+  if (isNextPosOk(0, -1, currentTileRot)) {
     drawCurrent(false);
     currentTileY--;
     drawCurrent(true);
@@ -403,14 +408,14 @@ void handleInput(input_t input) {
     drawCurrent(false);
     if (input == TR_IN_HOLD && ((holdBoxTile & 0x80) == 0)) {
       nextTile(true);
-    } else if (input == TR_IN_LEFT && isNextPositionOk(-1, 0, currentTileRot)) {
+    } else if (input == TR_IN_LEFT && isNextPosOk(-1, 0, currentTileRot)) {
       currentTileX--;
-    } else if (input == TR_IN_RIGHT && isNextPositionOk(1, 0, currentTileRot)) {
+    } else if (input == TR_IN_RIGHT && isNextPosOk(1, 0, currentTileRot)) {
       currentTileX++;
-    } else if (input == TR_IN_DOWN && isNextPositionOk(0, -1, currentTileRot)) {
+    } else if (input == TR_IN_DOWN && isNextPosOk(0, -1, currentTileRot)) {
       gameTicks = TICKS_PER_UNIT_TIME - 1;
     } else if (input == TR_IN_LOCK) {
-      while (isNextPositionOk(0, -1, currentTileRot)) {
+      while (isNextPosOk(0, -1, currentTileRot)) {
         currentTileY--;
       }
       gameTicks = TICKS_PER_UNIT_TIME - 1;

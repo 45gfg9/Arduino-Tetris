@@ -1,15 +1,23 @@
+/* Copyright © 2024 45gfg9 <45gfg9@45gfg9.net>
+ * This work is free. You can redistribute it and/or modify it under the
+ * terms of the Do What The Fuck You Want To Public License, Version 2,
+ * as published by Sam Hocevar. See the LICENSE file for more details.
+ */
+
 #ifndef __TETRIS__
 #define __TETRIS__
 
 #include <U8g2lib.h>
 
-#define SCR_WIDTH 64
-#define SCR_HEIGHT 128
-
+// pins used by display
 #define PIN_CS U8X8_PIN_NONE
 #define PIN_DC 9
 #define PIN_RST 10
 
+// ms per tile drop, the lower the faster
+#define GAME_SPEED 1200
+
+// check for input every 75ms
 #define TICK_MS 75
 
 // tetris input
