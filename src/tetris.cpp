@@ -147,13 +147,14 @@ int8_t getBoard(uint8_t x, uint8_t y) {
   if (x < BOARD_W && y < BOARD_H) {
     int8_t b = board[y][x / 2];
     if (x % 2 == 0) {
+      // do not `return b & 0x0f`, it breaks -1
       b <<= 4;
     }
     return b >> 4;
   }
   // assume the top is filled with walls
   // utilizes unsigned overflow
-  return (x >= BOARD_W || y > 127) ? 0 : -1;
+  return (x >= BOARD_W || y > SCHAR_MAX) ? 0 : -1;
 }
 
 static inline bool isPosEmpty(uint8_t x, uint8_t y) {
