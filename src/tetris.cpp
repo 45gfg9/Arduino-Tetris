@@ -184,7 +184,7 @@ void drawTile(uint8_t x, uint8_t y, int8_t tileIdx) {
 
     u8g2.drawBox(x, y, TILESIZ, TILESIZ);
   } else {
-    uint16_t b = pgm_read_word(TILES + tileIdx);
+    uint16_t b = pgm_read_word(&TILES[tileIdx]);
 
     u8g2.setDrawColor(1);
     u8g2.drawFrame(x, y, TILESIZ, TILESIZ);
@@ -203,8 +203,8 @@ static void drawCurrent(bool isWhite) {
 
   drawTile(currentTileX, currentTileY, tileIdx);
   for (uint8_t i = 0; i < 3; i++) {
-    drawTile(currentTileX + (int8_t)pgm_read_byte(&TILEPOS[currentTile][currentTileRot][i][0]),
-             currentTileY + (int8_t)pgm_read_byte(&TILEPOS[currentTile][currentTileRot][i][1]), tileIdx);
+    drawTile(currentTileX + pgm_read_byte(&TILEPOS[currentTile][currentTileRot][i][0]),
+             currentTileY + pgm_read_byte(&TILEPOS[currentTile][currentTileRot][i][1]), tileIdx);
   }
 }
 
@@ -213,8 +213,8 @@ static bool isNextPosOk(int8_t offX, int8_t offY, uint8_t newRot) {
     return false;
   }
   for (uint8_t i = 0; i < 3; i++) {
-    if (!isPosEmpty(currentTileX + offX + (int8_t)pgm_read_byte(&TILEPOS[currentTile][newRot][i][0]),
-                    currentTileY + offY + (int8_t)pgm_read_byte(&TILEPOS[currentTile][newRot][i][1]))) {
+    if (!isPosEmpty(currentTileX + offX + pgm_read_byte(&TILEPOS[currentTile][newRot][i][0]),
+                    currentTileY + offY + pgm_read_byte(&TILEPOS[currentTile][newRot][i][1]))) {
       return false;
     }
   }
@@ -281,11 +281,11 @@ static void nextTile(bool isHold) {
   currentTileY = BOARD_H;
   currentTileRot = 0;
 
-  char str[] = {pgm_read_byte(TILE_CHARS + (holdBoxTile & 0x7)), 0};
+  char tchar = pgm_read_byte(&TILE_CHARS[holdBoxTile & 0x7]);
   u8g2.setDrawColor(0);
   u8g2.drawBox(58, 0, 6, 8);
   u8g2.setDrawColor(1);
-  u8g2.drawStr(58, 8, str);
+  u8g2.drawGlyph(58, 8, tchar);
 
   gameTicks = TICKS_PER_UNIT_TIME - 1;
 }
@@ -379,8 +379,8 @@ void tickGame() {
   } else {
     bool ok = setBoard(currentTileX, currentTileY, currentTile);
     for (uint8_t i = 0; i < 3; i++) {
-      ok &= setBoard(currentTileX + (int8_t)pgm_read_byte(&TILEPOS[currentTile][currentTileRot][i][0]),
-                     currentTileY + (int8_t)pgm_read_byte(&TILEPOS[currentTile][currentTileRot][i][1]), currentTile);
+      ok &= setBoard(currentTileX + pgm_read_byte(&TILEPOS[currentTile][currentTileRot][i][0]),
+                     currentTileY + pgm_read_byte(&TILEPOS[currentTile][currentTileRot][i][1]), currentTile);
     }
     if (ok) {
       checkElimination();
@@ -421,7 +421,8 @@ void handleInput(input_t input) {
       }
       gameTicks = TICKS_PER_UNIT_TIME - 1;
     } else if (input == TR_IN_ROT_CW || input == TR_IN_ROT_CCW) {
-      rotateCurrent(input == TR_IN_ROT_CW);
+      bool isClockwise = input == TR_IN_ROT_CW;
+      rotateCurrent(isClockwise);
     }
     drawCurrent(true);
   }
